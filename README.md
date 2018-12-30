@@ -1,4 +1,4 @@
-# robodux-alt [![Build Status](https://travis-ci.org/Dudeonyx/robodux.svg?branch=master)](https://travis-ci.org/dudeonyx/robodux)
+# robodux-alt [![Build Status](https://travis-ci.org/Dudeonyx/robodux.svg?branch=master)](https://travis-ci.org/Dudeonyx/robodux)
 
 One of the biggest complaints developers have with redux is the amount of
 boilerplate and new concepts they have to learn to use it.  `robodux` attempts

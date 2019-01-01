@@ -49,7 +49,7 @@ export function tests<S = any, Ax extends IActions = IActions, SS = S>({
   return '' as any;
 }
 
-const fdf = tests({
+const fdf = tests<{sd:number}>({
   initState: {sd:5},
   actions: {
     set: (state, payload: number) => {state.sd = payload},

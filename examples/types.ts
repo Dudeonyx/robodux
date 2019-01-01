@@ -14,7 +14,7 @@ interface IState {
 
 interface Actions  {
   set: SliceState;
-  reset: null;
+  reset: never;
 };
 
 const defaultState = {
@@ -22,8 +22,8 @@ const defaultState = {
   wow: 0,
 };
 
-const { actions, selectors, reducer, slice } = robodux<SliceState,IState>({
-  // slice: 'hi',
+const { actions, selectors, reducer } = robodux< Actions,SliceState,IState>({
+  slice: 'hi',
   actions: {
     set: (state, payload) => payload,
     reset: (state) => defaultState,
@@ -31,7 +31,7 @@ const { actions, selectors, reducer, slice } = robodux<SliceState,IState>({
   initialState: defaultState,
 });
 
-const val = selectors.getHi(defaultState);
+const val = selectors.getHi({ hi:defaultState , auth:({} as any)});
 actions.set({ test: 'ok', wow: 0 });
 actions.reset();
 const red = reducer;
@@ -47,9 +47,9 @@ interface ISliceState {
 
 interface AuthActions {
   authSuccess: { idToken: string; userId: string };
-  authStart: null;
+  authStart: never;
   authFail: Error;
-  authLogout: null;
+  authLogout: never;
 }
 
 const initialState: ISliceState = {
@@ -59,7 +59,7 @@ const initialState: ISliceState = {
   error: null,
 };
 
-const auth = robodux({
+const auth = createSliceAlt({
   slice: 'auth',
   initialState,
   actions: {
@@ -67,14 +67,14 @@ const auth = robodux({
       state.error = error;
       state.authenticating = false;
     },
-    authLogout: (state, payload:never) => {
+    authLogout: (state) => {
       state.idToken = null;
       state.userId = null;
     },
     authStart: (state) => {
       state.authenticating = true;
     },
-    authSuccess: (state, payload:{ idToken: string; userId: string;}) => {
+    authSuccess: (state, payload: any) => {
       state.authenticating = false;
       state.idToken = payload.idToken;
       state.userId = payload.userId;

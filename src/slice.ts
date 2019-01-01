@@ -28,22 +28,22 @@ type ActionReducer<S = any, A = any> = (
   payload: A,
 ) => S | void | undefined;
 // type CReducer2<S = any> = (state: S) => S;
-type Reducer<S = any, A = any> = (state: S | undefined, payload: A) => S;
+type Reducer<SS = any, A = AnyAction> = (state: SS | undefined, payload: A) => SS;
 
-type ActionsObj<S = any, Ax = any> = {
-  [K in keyof Ax]: ActionReducer<S, Ax[K]>
+type ActionsObj<SS = any, Ax = any> = {
+  [K in keyof Ax]: ActionReducer<SS, Ax[K]>
 };
 
 type ActionsAny<P = any> = {
-  [K: string]: P;
+  [Action: string]: P;
 };
-interface ReduceM<S> {
-  [key: string]: ActionReducer<S, AnyAction>;
+interface ReduceM<SS> {
+  [Action: string]: ActionReducer<SS, AnyAction>;
 }
-type Result<A = any, S = any, SS = S> = {
+type Result<A extends ActionsAny = ActionsAny, SS = any, S = SS> = {
   slice: string;
-  reducer: Reducer<S, AnyAction>;
-  selectors: { [x: string]: (state: SS) => S };
+  reducer: Reducer<SS, AnyAction>;
+  selectors: { [x: string]: (state: S) => SS };
   actions: {
     [key in keyof A]: Object extends A[key]
       ? (payload?: any) => Action
@@ -52,51 +52,63 @@ type Result<A = any, S = any, SS = S> = {
         : (payload: A[key]) => Action<A[key]>
   };
 };
-type Input<S = any, Ax extends ActionsAny = ActionsAny> = {
-  initialState: S;
-  actions: ActionsObj<S, Ax>;
+type ResultAlt<A = any, SS = any, S = SS> = {
+  slice: string;
+  reducer: Reducer<SS, AnyAction>;
+  selectors: { [x: string]: (state: S) => SS | SS[keyof SS] };
+  actions: {
+    [key in keyof A]: Object extends A[key]
+      ? (payload?: any) => Action
+      : A[key] extends never
+        ? () => Action
+        : (payload: A[key]) => Action<A[key]>
+  };
+};
+type Input<SS = any, Ax = ActionsAny> = {
+  initialState: SS;
+  actions: ActionsObj<SS, Ax>;
   slice?: string;
 };
-type Input0<S = any, Ax extends ActionsAny = ActionsAny> = {
-  initialState: S;
-  actions: ActionsObj<S, Ax>;
+type Input0<SS = any, Ax = ActionsAny> = {
+  initialState: SS;
+  actions: ActionsObj<SS, Ax>;
 };
 
 const actionTypeBuilder = (slice: string) => (action: string) =>
   slice ? `${slice}/${action}` : action;
 
-type NUC<SX> = SX extends undefined ? any : SX;
+type NoEmptyObject<S> = Object extends S ? { [slice: string]: any } : S;
+
 export default function create<
-  SliceState = any,
-  Stat = undefined,
-  Actions extends ActionsAny = ActionsAny
+  Actions extends ActionsAny,
+  SliceState ,
 >({
   actions,
   initialState,
 }: Input0<SliceState, Actions>): Result<Actions, SliceState>;
 
 export default function create<
-  SliceState = Stat,
-  Stat = undefined,
-  Actions extends ActionsAny = ActionsAny
+  Actions extends ActionsAny,
+  SliceState ,
+  State extends {}
 >({
   slice,
   actions,
   initialState,
-}: Input<SliceState, Actions>): Result<Actions, SliceState, NUC<Stat>>;
+}: Input<SliceState, Actions>): Result<Actions, SliceState, NoEmptyObject<State>>;
 
 export default function create<
-  SliceState = Stat,
-  Stat = undefined,
-  Actions extends ActionsAny = ActionsAny
+  Actions extends ActionsAny,
+  SliceState,
+  State
 >({ actions, initialState, slice = '' }: Input<SliceState, Actions>) {
   const { actionMap, reducer } = makeActionMapAndReducer<
     SliceState,
     ActionsObj<SliceState, Actions>,
     Actions
   >(actions, slice, initialState);
-  type State = Stat extends undefined ? SliceState : Stat;
-  const selectors = makeSelectors<SliceState, State>(slice);
+  type StateX = NoEmptyObject<State>;
+  const selectors = makeSelectors<SliceState, StateX>(slice);
 
   return {
     actions: actionMap,
@@ -106,17 +118,37 @@ export default function create<
   };
 }
 //#region
+
 export function createSliceAlt<
-  State = SliceState | { [key: string]: any | SliceState },
-  SliceState = any,
-  Actions extends ActionsAny = ActionsAny
+  Actions extends ActionsAny,
+  SliceState,
+>({
+  actions,
+  initialState,
+}: Input0<SliceState, Actions>): ResultAlt<Actions, SliceState>;
+
+export function createSliceAlt<
+  Actions extends ActionsAny,
+  SliceState,
+  State extends {}
+>({
+  slice,
+  actions,
+  initialState,
+}: Input<SliceState, Actions>): ResultAlt<Actions, SliceState, NoEmptyObject<State>>;
+
+export function createSliceAlt<
+  Actions extends ActionsAny,
+  SliceState,
+  State = undefined
 >({ slice = '', actions, initialState }: Input<SliceState, Actions>) {
   const { actionMap, reducer } = makeActionMapAndReducer<
     SliceState,
     ActionsObj<SliceState, Actions>,
     Actions
   >(actions, slice, initialState);
-  const selectors = makeSelectorsAlt<SliceState, State>(slice, initialState);
+  type StateX = NoEmptyObject<State>;
+  const selectors = makeSelectorsAlt<SliceState, StateX>(slice, initialState);
   return {
     actions: actionMap,
     reducer,

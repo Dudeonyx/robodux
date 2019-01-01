@@ -22,8 +22,8 @@ const defaultState = {
   wow: 0,
 };
 
-const { actions, selectors, reducer } = robodux<SliceState, Actions, IState>({
-  slice: 'hi',
+const { actions, selectors, reducer, slice } = robodux<SliceState,IState>({
+  // slice: 'hi',
   actions: {
     set: (state, payload) => payload,
     reset: (state) => defaultState,
@@ -31,7 +31,7 @@ const { actions, selectors, reducer } = robodux<SliceState, Actions, IState>({
   initialState: defaultState,
 });
 
-const val = selectors.getHi({ hi: defaultState, auth: {} } as IState);
+const val = selectors.getHi(defaultState);
 actions.set({ test: 'ok', wow: 0 });
 actions.reset();
 const red = reducer;
@@ -59,27 +59,27 @@ const initialState: ISliceState = {
   error: null,
 };
 
-const auth = createSliceAlt<ISliceState, AuthActions, IState>({
+const auth = robodux({
   slice: 'auth',
+  initialState,
   actions: {
-    authFail: (state, error) => {
+    authFail: (state, error: Error) => {
       state.error = error;
       state.authenticating = false;
     },
-    authLogout: (state) => {
+    authLogout: (state, payload:never) => {
       state.idToken = null;
       state.userId = null;
     },
     authStart: (state) => {
       state.authenticating = true;
     },
-    authSuccess: (state, payload) => {
+    authSuccess: (state, payload:{ idToken: string; userId: string;}) => {
       state.authenticating = false;
       state.idToken = payload.idToken;
       state.userId = payload.userId;
     },
   },
-  initialState,
 });
 
 // You can destructure and export the reducer, action creators and selectors

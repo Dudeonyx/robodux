@@ -8,44 +8,105 @@ import {
   createSelectorAlt,
 } from './selector';
 import { Action } from './types';
+import { AnyAction } from 'redux';
 
-type Reduce<State, Payload = null> = Payload extends null
-  ? (state: State) => State | undefined | void
-  : (state: State, payload: Payload) => State | undefined | void;
+/* type Reduce<State, Payload> = (state: State, payload: Payload) => State | undefined | void;
 
 interface ReduceMap<State> {
-  [key: string]: Reduce<State, any>;
+  [key: string]: Reduce<State, AnyAction>;
 }
+
 
 interface ICreate<State, Actions> {
   slice?: string;
   actions: { [key in keyof Actions]: Reduce<State, Actions[key]> };
   initialState: State;
-}
+} */
+
+ type ActionReducer<S = any, A = any> = (
+    state: S | undefined,
+    payload: A,
+  ) => S | void | undefined;
+  // type CReducer2<S = any> = (state: S) => S;
+ type Reducer<S = any, A = any> = (
+    state: S | undefined,
+    payload: A,
+  ) => S;
+  
+ type ActionsObj<S = any, Ax = any> = { [K in keyof Ax]: ActionReducer<S, Ax[K]> };
+  
+ type IActionsAny<P = any> = {
+    [K: string]: P;
+  };
+ interface ReduceM<S> {
+    [key: string]: ActionReducer<S, AnyAction>;
+  }
+ type Result<A = any, S = any, SS = S> = {
+    slice: string;
+    reducer: Reducer<S, AnyAction>;
+    selectors: {[x: string]: (state: SS) => S}
+    actions: {
+      [key in keyof A]: Object extends A[key]
+      ? (payload?: any) => Action
+      : A[key] extends never ? () => Action
+      : (payload: A[key]) => Action<A[key]>
+    };
+  };
+ type Input<S = any, Ax extends IActionsAny = IActionsAny> = {
+    initialState: S;
+    actions: ActionsObj<S, Ax>;
+    slice?: string;
+  }
+ type Input0<S = any, Ax extends IActionsAny = IActionsAny> = {
+    initialState: S;
+    actions: ActionsObj<S, Ax>;
+  }
+
+
 
 const actionTypeBuilder = (slice: string) => (action: string) =>
   slice ? `${slice}/${action}` : action;
 
-type NoUndefinedActionsCheck<Actions> = Actions extends undefined
-  ? { [s: string]: any }
-  : Actions;
+type NUC<SX> = SX extends undefined
+  ? any
+  : SX;
 export default function create<
-  SliceState,
-  Actions = undefined,
-  State = { [key: string]: SliceState } | SliceState
+SliceState = any,
+Stat = undefined,
+  Actions extends IActionsAny = IActionsAny,
 >({
-  slice = '',
   actions,
   initialState,
-}: ICreate<SliceState, NoUndefinedActionsCheck<Actions>>) {
-  type Ax = NoUndefinedActionsCheck<Actions>;
-  const { actionMap, reducer } = makeActionMapAndReducer<SliceState, Ax>(
+}: Input0<SliceState, Actions>):Result<Actions,SliceState>
+
+export default function create<
+SliceState = Stat,
+Stat = undefined,
+  Actions extends IActionsAny = IActionsAny,
+>({
+  slice,
+  actions,
+  initialState,
+}: Input<SliceState, Actions>):Result<Actions,SliceState, NUC<Stat>>
+
+export default function create<
+SliceState = Stat,
+Stat = undefined,
+  Actions extends IActionsAny = IActionsAny,
+>({
+  actions,
+  initialState,
+  slice = '',
+}: Input<SliceState, Actions>) {
+  const { actionMap, reducer } = makeActionMapAndReducer<SliceState, ActionsObj<SliceState, Actions>, Actions>(
     actions,
-    slice,
+    slice as string,
     initialState,
   );
-
-  const selectors = makeSelectors<SliceState, State>(slice);
+  type State = Stat extends undefined
+  ? SliceState
+  : Stat;
+  const selectors = makeSelectors<SliceState, State>(slice as any);
 
   return {
     actions: actionMap,
@@ -54,23 +115,21 @@ export default function create<
     selectors,
   };
 }
-
+//#region 
 export function createSliceAlt<
-  SliceState,
-  Actions = undefined,
-  State = { [key: string]: SliceState } | SliceState
+State = SliceState  | {[key:string]: any | SliceState},
+SliceState = any,
+Actions extends IActionsAny = IActionsAny,
 >({
-  slice = '',
+slice = '',
+actions,
+initialState,
+}: Input<SliceState, Actions>) {
+const { actionMap, reducer } = makeActionMapAndReducer<SliceState, ActionsObj<SliceState, Actions>, Actions>(
   actions,
+  slice,
   initialState,
-}: ICreate<SliceState, NoUndefinedActionsCheck<Actions>>) {
-  type Ax = NoUndefinedActionsCheck<Actions>;
-  const { actionMap, reducer } = makeActionMapAndReducer<SliceState, Ax>(
-    actions,
-    slice,
-    initialState,
-  );
-
+);
   const selectors = makeSelectorsAlt<SliceState, State>(slice, initialState);
   return {
     actions: actionMap,
@@ -109,9 +168,9 @@ function makeSelectorsAlt<SliceState, State>(
   }
   return selectors;
 }
-
-function makeActionMapAndReducer<SliceState, Ax>(
-  actions: { [key in keyof Ax]: Reduce<SliceState, Ax[key]> },
+//#endregion
+function makeActionMapAndReducer<SliceState, Ax, Actions>(
+  actions: Ax,
   slice: string,
   initialState: SliceState,
 ) {
@@ -124,19 +183,19 @@ function makeActionMapAndReducer<SliceState, Ax>(
     initialState,
     slice,
   );
-  const actionMap = makeActionMap<Ax>(actionKeys, createActionType);
+  const actionMap = makeActionMap<Ax,Actions>(actionKeys, createActionType);
   return { actionMap, reducer };
 }
 
 function makeReducer<SliceState, Ax>(
   actionKeys: (keyof Ax)[],
   createActionType: (action: string) => string,
-  actions: { [key in keyof Ax]: Reduce<SliceState, Ax[key]> },
+  actions: Ax,
   initialState: SliceState,
   slice: string,
 ) {
-  const reducerMap = actionKeys.reduce<ReduceMap<SliceState>>((map, action) => {
-    map[createActionType(action as string)] = actions[action];
+  const reducerMap = actionKeys.reduce<ReduceM<SliceState>>((map, action) => {
+    (map as any)[createActionType(action as string)] = actions[action];
     return map;
   }, {});
   const reducer = createReducer<SliceState>({
@@ -147,20 +206,21 @@ function makeReducer<SliceState, Ax>(
   return reducer;
 }
 
-function makeActionMap<Ax>(
+function makeActionMap<Ax, Actions>(
   actionKeys: (keyof Ax)[],
   createActionType: (s: string) => string,
 ) {
   const actionMap = actionKeys.reduce<
     {
-      [A in keyof Ax]: Ax extends { [s: string]: {} }
-        ? (payload?: Ax[A]) => Action<Ax[A]>
-        : Ax[A] extends null ? () => Action : (payload: Ax[A]) => Action<Ax[A]>
+      [key in keyof Actions]: Object extends Actions[key]
+      ? (payload?: any) => Action
+      : Actions[key] extends never ? () => Action
+      : (payload: Actions[key]) => Action<Actions[key]>
     }
   >(
     (map, action) => {
       const type = createActionType(action as string);
-      map[action] = createAction(type) as any;
+      (map as any)[action] = createAction(type) as any;
       return map;
     },
     {} as any,

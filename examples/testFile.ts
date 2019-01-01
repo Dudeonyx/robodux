@@ -12,7 +12,7 @@ import { AnyAction, Action } from 'redux';
 export type CReducer<S = any, A = any> = (
   state: S | undefined,
   payload: A,
-) => S;
+) => S | void | undefined;
 export type CReducer2<S = any> = (state: S) => S;
 
 type Actions<S = any, Ax = any> = { [K in keyof Ax]: CReducer<S, Ax[K]> };
@@ -21,7 +21,10 @@ type IActions<P = any> = {
   [K: string]: P;
 };
 
-type Result<A = any> = {
+type Result<A = any, S = any, SS = S> = {
+  slice: string;
+  reducer: CReducer<S, AnyAction>;
+  selectors: {[x: string]: (state: SS) => S}
   actions: {
     [key in keyof A]: Object extends A[key]
       ? (payload?: A[key]) => A[key]
@@ -34,7 +37,7 @@ type Result<A = any> = {
 //   actions: Actions<S>,
 //   slice: string,
 // ): Result<any>;
-export function tests<S = any, Ax extends IActions = IActions>({
+export function tests<S = any, Ax extends IActions = IActions, SS = S>({
   initState,
   actions,
   slice = '',
@@ -42,14 +45,14 @@ export function tests<S = any, Ax extends IActions = IActions>({
   initState: S;
   actions: Actions<S, Ax>;
   slice: string;
-}): Result<Ax> {
+}): Result<Ax, S, SS> {
   return '' as any;
 }
 
 const fdf = tests({
-  initState: 5,
+  initState: {sd:5},
   actions: {
-    set: (state, payload: number) => state + payload,
+    set: (state, payload: number) => {state.sd = payload},
     reset: (state) => state,
   },
   slice: 'hello',
@@ -57,3 +60,4 @@ const fdf = tests({
 
 fdf.actions.set;
 fdf.actions.reset;
+fdf.reducer(undefined, {type: 'dfdf'});

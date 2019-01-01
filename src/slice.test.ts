@@ -7,10 +7,10 @@ describe('createSlice', () => {
       increment: null;
       multiply: number;
     }
-    const { actions, reducer, selectors } = createSlice<State, Actions>({
+    const { actions, reducer, selectors } = createSlice<State>({
       actions: {
         increment: (state) => state + 1,
-        multiply: (state, payload) => state * payload,
+        multiply: (state, payload: number) => state * payload,
       },
       initialState: 0,
     });
@@ -108,7 +108,7 @@ describe('createSlice', () => {
     const { selectors } = createSliceAlt({
       actions: {
         setName: (state, name) => { state.name = name},
-        setSurname: (state, surname) => { state.surName = surname},
+        setSurname: (state, surname) => { state.surname = surname},
         setMiddlename: (state, middlename) => { state.middlename = middlename}
       },
       slice: 'form',

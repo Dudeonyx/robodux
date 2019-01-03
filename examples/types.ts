@@ -1,4 +1,5 @@
 import robodux from '../src/slice';
+import { configureStore } from '../src/configureStore';
 import { combineReducers, createStore, applyMiddleware, Dispatch } from 'redux';
 import thunk from 'redux-thunk';
 import { IordersReducerState, IDbOrders } from './types.d';
@@ -138,6 +139,26 @@ const rootReducer = combineReducers<IState>({
   hi: reducer,
   auth: authReducer,
   ords: ordersReducer,
+});
+
+const cStore = configureStore({
+  reducer: reducer,
+  preloadedState: {
+    test: 'fdfdf',
+  },
+});
+const cStore2 = configureStore({
+  reducer: {
+    hi: reducer,
+    auth: authReducer,
+    ords: ordersReducer,
+  },
+  preloadedState: {
+    hi: {
+      test: '',
+      wow: 0,
+    },
+  },
 });
 
 const store = createStore(rootReducer, applyMiddleware(thunk));
